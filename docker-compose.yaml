@@ -2,7 +2,7 @@ version: "3.2"
 services:
   web:
     #src-i texy petqa lini djangoi projecti anuny
-    image: src:latest
+    image: tdsp:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -26,7 +26,7 @@ services:
     tty: true
     env_file: .env
     restart: always
-    command: bash -c 'python3 src/manage.py runserver 0.0.0.0:8000'
+    command: bash -c 'python3 src/tdsp/manage.py runserver 0.0.0.0:8000'
     networks:
       pgnet:
 

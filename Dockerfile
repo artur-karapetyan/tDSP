@@ -9,7 +9,7 @@ WORKDIR /data
 ADD ./requirements.txt /data
 RUN apt-get update
 RUN apt-get -y upgrade
-RUN apt-get -y install python3 python3-dev python3-pip postgresql-client postgresql-server-dev-10
+RUN apt-get -y install python3.10 python3-dev python3-pip postgresql-client postgresql-server-dev-10
 RUN apt-get update && apt-get install -y python3-pip
 RUN apt-get update && apt-get install -y libjpeg-dev libpng-dev python-pil
 RUN apt-get -y install curl zip unzip
