@@ -30,10 +30,18 @@ class CreativeView(View):
 
         img = Image.open(creative.file)
 
-        img = img.resize((width, height))
+        image = Image.new("RGB", (width, height), "white")
+
+        scale = min(width / img.width, height / img.height)
+        img = img.resize((int(img.width * scale), int(img.height * scale)))
+
+        x_pos = (image.width - img.width) // 2
+        y_pos = (image.height - img.height) // 2
+
+        image.paste(img, (x_pos, y_pos))
 
         buffer = BytesIO()
-        img.save(buffer, format='PNG')
+        image.save(buffer, format='PNG')
         buffer.seek(0)
 
         return HttpResponse(buffer, content_type='image/png')
