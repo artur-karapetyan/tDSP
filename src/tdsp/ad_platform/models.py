@@ -10,7 +10,6 @@ class BidRequest(models.Model):
     domain = models.CharField(max_length=100)
     ssp_id = models.CharField(max_length=100)
     user_id = models.CharField(max_length=100)
-    price = models.FloatField(default=0)
 
 
 class BidResponse(models.Model):
@@ -33,7 +32,6 @@ class Campaign(models.Model):
     budget = models.IntegerField(default=0)
 
 
-
 class Category(models.Model):
     code = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
@@ -43,8 +41,9 @@ class Creative(models.Model):
     external_id = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
     categories = models.ManyToManyField(Category)
-    campaign_id = models.ForeignKey(Campaign, on_delete=models.CASCADE)
-    file_url = models.CharField(max_length=100)
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE)
+    file = models.ImageField(upload_to='creatives/')
+    url = models.CharField(max_length=255, blank=True)
 
 
 class Configuration(models.Model):
@@ -52,7 +51,13 @@ class Configuration(models.Model):
     auction_type = models.BooleanField(default=False)  # False if 1st auction
     mode = models.BooleanField(default=False)  # False if "free" mode
     budget = models.IntegerField(default=0)
-    impressions_revenue = models.IntegerField(default=0)
+    impression_revenue = models.IntegerField(default=0)
     click_revenue = models.IntegerField(default=0)
     conversion_revenue = models.IntegerField(default=0)
     frequency_capping = models.IntegerField(default=0)
+
+
+class CampaignFrequency(models.Model):
+    user_id = models.CharField(max_length=100)
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE)
+    frequency = models.IntegerField(default=0)

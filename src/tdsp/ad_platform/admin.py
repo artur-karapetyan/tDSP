@@ -1,10 +1,10 @@
 from django.contrib import admin
-from .models import BidRequest, BidResponse, Notify, Campaign, Category, Creative, Configuration
+from .models import BidRequest, BidResponse, Notify, Campaign, Category, Creative, Configuration, CampaignFrequency
 
 
 @admin.register(BidRequest)
 class BidRequestAdmin(admin.ModelAdmin):
-    list_display = ('id', 'domain', 'user_id', 'price')
+    list_display = ('id', 'domain', 'user_id')
 
 
 @admin.register(BidResponse)
@@ -33,7 +33,8 @@ class CategoryInline(admin.TabularInline):
 
 @admin.register(Creative)
 class CreativeAdmin(admin.ModelAdmin):
-    list_display = ('external_id', 'name', 'campaign_id', 'file_url')
+    list_display = ('external_id', 'name', 'campaign_id', 'file',)
+    readonly_fields = ('url',)
     inlines = [CategoryInline]
 
 
@@ -44,7 +45,15 @@ class ConfigurationAdmin(admin.ModelAdmin):
         'auction_type',
         'mode',
         'budget',
-        'impressions_revenue',
+        'impression_revenue',
         'click_revenue',
         'conversion_revenue',
         'frequency_capping')
+
+
+@admin.register(CampaignFrequency)
+class CampaignFrequencyAdmin(admin.ModelAdmin):
+    list_display = (
+        'user_id',
+        'campaign_id',
+        'frequency')
