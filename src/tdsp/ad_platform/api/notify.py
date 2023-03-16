@@ -38,9 +38,12 @@ class NotifyView(View):
             campaign.budget -= notify.price
             campaign.save()
         else:
-            notify = Notify.objects.create(
-                notify_id=data.get('id'),
-                win=data.get('win'),
-            )
+            try:
+                notify = Notify.objects.create(
+                    notify_id=data.get('id'),
+                    win=data.get('win'),
+                )
+            except:
+                pass
 
         return JsonResponse({}, status=200)

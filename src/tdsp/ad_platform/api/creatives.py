@@ -8,10 +8,11 @@ from PIL import Image
 
 #
 from django.views import View
+from django.core.files.base import ContentFile
 from django.http import JsonResponse, HttpResponse
 
 #
-from ..models import Creative
+from ..models import Creative, Category, Campaign
 
 
 class CreativeView(View):
@@ -48,34 +49,49 @@ class CreativeView(View):
 
     @staticmethod
     def post(request):
-        # Get the data from the request
-        data = json.loads(request)
-        # Decode the file from base64
-        file_data = base64.b64decode(data['file'])
-        # Save the creative
-        creative = Creative(
-            external_id=data['external_id'],
-            name=data['name'],
-            campaign=data['campaign']['id'],
-            file=file_data,
-            url='',
-        )
+        data = json.loads(request.body)
+
+        external_id = data['external_id']
+        name = data['name']
+        categories = data.get('categories', [])
+        campaign_id = data.get('campaign', {}).get('id')
+        file_data = data['file']
+
+        # Check if external ID is unique
+        if Creative.objects.filter(external_id=external_id).exists():
+            return JsonResponse({'error': 'External ID already exists'}, status=400)
+
+        # Decode the file data and create a ContentFile object
+        file_data = base64.b64decode(file_data)
+        file = ContentFile(file_data, name=f'{name}.png')
+
+        img = Image.open(file)
+
+        url = f"http://{request.get_host()}/api/creatives/{name}?width={img.width}&height={img.height}"
+
+        # Create or retrieve the campaign object
+        try:
+            campaign = Campaign.objects.get(id=campaign_id)
+        except Campaign.DoesNotExist:
+            return JsonResponse({'error': 'Campaign does not exist'}, status=400)
+
+        # Create the creative object
+        creative = Creative.objects.create(external_id=external_id, name=name, campaign=campaign, file=file, url=url)
         creative.save()
-        # Create the file name based on the creative ID
-        file_name = f"{creative.id}.png"
-        # Write the file to disk
-        with open(file_name, 'wb') as f:
-            f.write(file_data)
-        # Set the file URL and save the creative again
-        creative.url = f'creatives/{file_name}'
-        creative.save()
-        # Create the response data
+
+        # Add categories to the creative object
+        for category in categories:
+            category_obj = Category.objects.get(code=category['code'])
+            creative.categories.add(category_obj)
+
+        # Create the response
         response_data = {
             'id': creative.id,
             'external_id': creative.external_id,
             'name': creative.name,
-            'categories': [{'code': c.code, 'name': c.name} for c in creative.categories.all()],
-            'campaign': {'id': creative.campaign},
-            'url': creative.file_url,
+            'categories': [{'id': category.id, 'code': category.code} for category in creative.categories.all()],
+            'campaign': {'id': creative.campaign.id, 'name': creative.campaign.name},
+            'url': url,
         }
-        return JsonResponse(response_data)
+
+        return JsonResponse(response_data, status=201)

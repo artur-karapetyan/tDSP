@@ -40,12 +40,14 @@ class BidView(View):
         conversion_rev = config.conversion_revenue
 
         expected_click_revenue = click_rev * click_prob
-        expected_conv_revenue = conversion_rev * conv_prob
+        expected_conv_revenue = click_prob * conversion_rev * conv_prob
 
         price = (expected_click_revenue + expected_conv_revenue) / 2
 
         if campaign.budget - price < 0:
             price = campaign.budget
+
+        price = round(price, 2)
 
         return price
 
@@ -170,7 +172,7 @@ class BidView(View):
         request_data = json.loads(request.body)
 
         # extract the mandatory fields from the request data
-        bid_id = request_data.get('id')
+        bid_id = request_data['id']
         banner_width = request_data['imp']['banner']['w']
         banner_height = request_data['imp']['banner']['h']
         click_prob = request_data['click']['prob']
@@ -179,12 +181,12 @@ class BidView(View):
         ssp_id = request_data['ssp']['id']
         user_id = request_data['user']['id']
 
-        authorized = BidView.check_ads_txt(domain, ssp_id)
-
-        if not authorized:
-            response_data = HttpResponse(content_type='text/plain;charset=UTF8', status=204)
-            response_data.content = "No Bid"
-            return response_data
+        # authorized = BidView.check_ads_txt(domain, ssp_id)
+        #
+        # if not authorized:
+        #     response_data = HttpResponse(content_type='text/plain;charset=UTF8', status=204)
+        #     response_data.content = "No Bid"
+        #     return response_data
 
         # check if mandatory fields are present
         if not all([bid_id, banner_width, banner_height, click_prob, conv_prob, domain, ssp_id, user_id]):
@@ -231,10 +233,10 @@ class BidView(View):
         campaign = creative.campaign
 
         # Check frequency capping
-        frequency_capping = BidView.check_frequency_capping(user_id, campaign)
+        # frequency_capping = BidView.check_frequency_capping(user_id, campaign)
 
-        if creative and frequency_capping:
-            url = f"http://{request.get_host()}/creatives/{creative.name}?width={banner_width}&height={banner_height}"
+        if creative:  # and frequency_capping:
+            url = f"http://{request.get_host()}/api/creatives/{creative.name}?width={banner_width}&height={banner_height}"
 
             # calculate price
             price = BidView.calculate_price(float(click_prob), float(conv_prob), campaign)
@@ -245,7 +247,7 @@ class BidView(View):
                 external_id=creative.external_id,
                 price=price,
             )
-            print(price)
+
             # create response body
             response = {
                 'external_id': creative.external_id,

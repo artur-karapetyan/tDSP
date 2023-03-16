@@ -24,7 +24,7 @@ class Notify(models.Model):
     price = models.FloatField(default=0)
     click = models.BooleanField(default=False)
     conversion = models.BooleanField(default=False)
-    revenue = models.FloatField(default=0)
+    revenue = models.IntegerField(default=0)
 
 
 class Campaign(models.Model):

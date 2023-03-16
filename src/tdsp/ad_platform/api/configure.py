@@ -13,9 +13,8 @@ class ConfigurationView(View):
 
     @staticmethod
     def post(request):
+        print(request.user)
         Configuration.objects.all().delete()
-        # Campaign.objects.all().delete()
-        # Creative.objects.all().delete()
         BidRequest.objects.all().delete()
         BidResponse.objects.all().delete()
         CampaignFrequency.objects.all().delete()
@@ -49,5 +48,8 @@ class ConfigurationView(View):
             campaign = Campaign.objects.first()
             campaign.budget = budget
             campaign.save()
+        else:
+            Campaign.objects.all().delete()
+            Creative.objects.all().delete()
 
         return JsonResponse({}, status=200)
