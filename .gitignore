@@ -130,3 +130,6 @@ dmypy.json
 migrations
 media
 .idea
+
+#Ignore all xlsx files
+*.xlsx
