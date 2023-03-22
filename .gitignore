@@ -130,4 +130,6 @@ dmypy.json
 migrations
 media
 .idea
-.xlsx
+
+# Categories.xlsx
+categories.xlsx
