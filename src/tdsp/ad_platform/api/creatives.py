@@ -1,6 +1,7 @@
 #
 import json
 import base64
+from urllib.parse import quote
 from io import BytesIO
 
 #
@@ -21,11 +22,11 @@ class CreativeView(View):
     def get(request, name):
         width = int(request.GET.get('width', 0))
         height = int(request.GET.get('height', 0))
-        if width > 1000 or height > 1000:
+        if width > 2000 or height > 2000:
             width = 500
             height = 500
         try:
-            creative = Creative.objects.get(name=name)
+            creative = Creative.objects.get(id=name)
         except Creative.DoesNotExist:
             return HttpResponse(status=404)
 
@@ -63,11 +64,13 @@ class CreativeView(View):
 
         # Decode the file data and create a ContentFile object
         file_data = base64.b64decode(file_data)
-        file = ContentFile(file_data, name=f'{name}.png')
+        # new_name = quote(name)
+        # new_name = new_name.replace("%", "")
+        # file = ContentFile(file_data, name=f'{new_name}.png')
+        #
+        # img = Image.open(file)
 
-        img = Image.open(file)
-
-        url = f"http://{request.get_host()}/api/creatives/{name}?width={img.width}&height={img.height}"
+        # url = f"http://{request.get_host()}/api/creatives/{new_name}?width={img.width}&height={img.height}"
 
         # Create or retrieve the campaign object
         try:
@@ -76,7 +79,13 @@ class CreativeView(View):
             return JsonResponse({'error': 'Campaign does not exist'}, status=400)
 
         # Create the creative object
-        creative = Creative.objects.create(external_id=external_id, name=name, campaign=campaign, file=file, url=url)
+        creative = Creative.objects.create(external_id=external_id, name=name, campaign=campaign)
+        creative.save()
+        file = ContentFile(file_data, name=f'{creative.id}.png')
+        img = Image.open(file)
+        url = f"http://{request.get_host()}/api/creatives/{creative.id}?width={img.width}&height={img.height}"
+        creative.file = file
+        creative.url = url
         creative.save()
 
         # Add categories to the creative object

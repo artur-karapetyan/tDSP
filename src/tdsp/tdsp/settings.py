@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'ad_platform',
+    'django_extensions',
+    'django_cleanup.apps.CleanupConfig',
     # 'rest_framework',
     # 'rest_framework_simplejwt',
 ]

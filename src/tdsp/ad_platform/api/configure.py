@@ -13,7 +13,7 @@ class ConfigurationView(View):
 
     @staticmethod
     def post(request):
-        print(request.user)
+        # print(request.user)
         Configuration.objects.all().delete()
         BidRequest.objects.all().delete()
         BidResponse.objects.all().delete()
@@ -30,6 +30,7 @@ class ConfigurationView(View):
             click_revenue = data.get('click_revenue')
             conversion_revenue = data.get('conversion_revenue')
             freq_capping = data.get('frequency_capping')
+            game_goal = data.get('game_goal')
         except:
             return JsonResponse({'error': 'Missing fields'})
 
@@ -42,6 +43,7 @@ class ConfigurationView(View):
             click_revenue=click_revenue,
             conversion_revenue=conversion_revenue,
             frequency_capping=freq_capping,
+            game_goal=False if game_goal == 'revenue' else True
         )
 
         if mode == 'free':

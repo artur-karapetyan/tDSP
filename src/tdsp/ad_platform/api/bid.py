@@ -1,26 +1,25 @@
 #
 import json
 import requests
+from django.db.models import Q
 
 #
 from django.views import View
 from django.http import JsonResponse, HttpResponse
 
 #
-from ..models import BidRequest, Creative, BidResponse, Configuration, Campaign, CampaignFrequency
+from ..models import BidRequest, Creative, BidResponse, Configuration, Campaign, CampaignFrequency, Category
 
 
 class BidView(View):
-    server_url = " "  # Replace with given url
 
     @staticmethod
-    def check_ads_txt(site_domain, ssp_id):
+    def check_ads_txt(server, site_domain, ssp_id):
         """
         Checks the ads.txt file for the publisher domain and returns True if the ssp_id is authorized to sell traffic
         from the site_domain, False otherwise.
         """
-        server = BidView.server_url
-        ads_txt_url = f"{server}/ads.txt?publisher={site_domain}"
+        ads_txt_url = f"http://{server}/ads.txt?publisher={site_domain}"
         try:
             response = requests.get(ads_txt_url)
             if response.status_code == 200:
@@ -35,14 +34,20 @@ class BidView(View):
     @staticmethod
     def calculate_price(click_prob, conv_prob, campaign):
         config = Configuration.objects.first()
-        impression_rev = config.impression_revenue
+        # impression_rev = config.impression_revenue
         click_rev = config.click_revenue
         conversion_rev = config.conversion_revenue
 
         expected_click_revenue = click_rev * click_prob
         expected_conv_revenue = click_prob * conversion_rev * conv_prob
 
-        price = (expected_click_revenue + expected_conv_revenue) / 2
+        if not config.game_goal:  # If game_goal is "revenue"
+            price = (expected_click_revenue + expected_conv_revenue) / 2
+        else:  # If game_goal is spent budget / number of clicks
+            if click_prob > 0.5:
+                price = expected_click_revenue + (expected_conv_revenue / 2)
+            else:
+                price = (expected_click_revenue + expected_conv_revenue) / 3
 
         if campaign.budget - price < 0:
             price = campaign.budget
@@ -70,12 +75,38 @@ class BidView(View):
         return True
 
     @staticmethod
+    def return_creatives(bcat):
+        forbidden_categories = []
+        forbidden_subcategories = []
+
+        # Split the list into categories and subcategories
+        for item in bcat:
+            if "-" in item:
+                forbidden_subcategories.append(item)
+            else:
+                forbidden_categories.append(item)
+
+        # Construct the query
+        query = Q()
+        for category in forbidden_categories:
+            query |= Q(categories__code=category)
+
+        # Exclude the forbidden subcategories
+        for category_code in forbidden_categories:
+            category = Category.objects.get(code=category_code)
+            forbidden_subcategories += category.get_subcategory_codes()
+
+        # Exclude the forbidden creatives
+        creatives = Creative.objects.exclude(query).exclude(categories__code__in=forbidden_subcategories)
+        return creatives
+
+    @staticmethod
     def script_mode(request):
         # extract the request body data
         request_data = json.loads(request.body)
 
         # extract the mandatory fields from the request data
-        bid_id = request_data.get('id')
+        bid_id = request_data['id']
         banner_width = request_data['imp']['banner']['w']
         banner_height = request_data['imp']['banner']['h']
         click_prob = request_data['click']['prob']
@@ -84,12 +115,13 @@ class BidView(View):
         ssp_id = request_data['ssp']['id']
         user_id = request_data['user']['id']
 
-        authorized = BidView.check_ads_txt(domain, ssp_id)
-
-        if not authorized:
-            response_data = HttpResponse(content_type='text/plain;charset=UTF8', status=204)
-            response_data.content = "No Bid"
-            return response_data
+        # server = request.META.get('REMOTE_ADDR')
+        # authorized = BidView.check_ads_txt(server, domain, ssp_id)
+        #
+        # if not authorized:
+        #     response_data = HttpResponse(content_type='text/plain;charset=UTF8', status=204)
+        #     response_data.content = "No Bid"
+        #     return response_data
 
         # check if mandatory fields are present
         if not all([bid_id, banner_width, banner_height, click_prob, conv_prob, domain, ssp_id, user_id]):
@@ -108,9 +140,8 @@ class BidView(View):
 
         # check if banner dimensions are valid
         if banner_width > 2000 or banner_height > 2000:
-            response_data = HttpResponse(content_type='text/plain;charset=UTF8', status=204)
-            response_data.content = "No Bid"
-            return response_data
+            banner_width = 500
+            banner_height = 500
 
         # create bid request object
         bid_request = BidRequest.objects.create(
@@ -128,18 +159,29 @@ class BidView(View):
         blocked_categories = request_data.get('bcat', [])
 
         # Get all creatives that don't belong to blocked categories
-        available_creatives = Creative.objects.exclude(categories__code__in=blocked_categories)
+        available_creatives = BidView.return_creatives(blocked_categories)
 
         # Select a creative at random from the available list
-        creative = available_creatives.order_by('?').first()
+        creatives = available_creatives.order_by('?')
 
-        campaign = creative.campaign
+        if creatives:
+            creative = creatives.first()
+            campaign = creative.campaign
+            for c in creatives:
+                if c.campaign.is_enabled:
+                    creative = c
+                    campaign = c.campaign
+                    break
+        else:
+            response_data = HttpResponse(content_type='text/plain;charset=UTF8', status=204)
+            response_data.content = "No Bid"
+            return response_data
 
         # Check frequency capping
         frequency_capping = BidView.check_frequency_capping(user_id, campaign)
 
         if creative and frequency_capping:
-            url = f"http://{request.get_host()}/creatives/{creative.name}?width={banner_width}&height={banner_height}"
+            url = f"http://{request.get_host()}/api/creatives/{creative.id}?width={banner_width}&height={banner_height}"
 
             # calculate price
             price = BidView.calculate_price(float(click_prob), float(conv_prob), campaign)
@@ -150,7 +192,7 @@ class BidView(View):
                 external_id=creative.external_id,
                 price=price,
             )
-            print(price)
+
             # create response body
             response = {
                 'external_id': creative.external_id,
@@ -181,7 +223,8 @@ class BidView(View):
         ssp_id = request_data['ssp']['id']
         user_id = request_data['user']['id']
 
-        # authorized = BidView.check_ads_txt(domain, ssp_id)
+        # server = request.META.get('REMOTE_ADDR')
+        # authorized = BidView.check_ads_txt(server, domain, ssp_id)
         #
         # if not authorized:
         #     response_data = HttpResponse(content_type='text/plain;charset=UTF8', status=204)
@@ -220,23 +263,33 @@ class BidView(View):
             ssp_id=ssp_id,
             user_id=user_id,
         )
-
         # Assume that blocked_categories is a list of blocked category codes
         blocked_categories = request_data.get('bcat', [])
 
         # Get all creatives that don't belong to blocked categories
-        available_creatives = Creative.objects.exclude(categories__code__in=blocked_categories)
+        available_creatives = BidView.return_creatives(blocked_categories)
 
         # Select a creative at random from the available list
-        creative = available_creatives.order_by('?').first()
+        creatives = available_creatives.order_by('?')
 
-        campaign = creative.campaign
+        if creatives:
+            creative = creatives.first()
+            campaign = creative.campaign
+            for c in creatives:
+                if c.campaign.is_enabled:
+                    creative = c
+                    campaign = c.campaign
+                    break
+        else:
+            response_data = HttpResponse(content_type='text/plain;charset=UTF8', status=204)
+            response_data.content = "No Bid"
+            return response_data
 
         # Check frequency capping
         # frequency_capping = BidView.check_frequency_capping(user_id, campaign)
 
         if creative:  # and frequency_capping:
-            url = f"http://{request.get_host()}/api/creatives/{creative.name}?width={banner_width}&height={banner_height}"
+            url = creative.url
 
             # calculate price
             price = BidView.calculate_price(float(click_prob), float(conv_prob), campaign)

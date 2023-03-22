@@ -30,11 +30,21 @@ class Notify(models.Model):
 class Campaign(models.Model):
     name = models.CharField(max_length=100)
     budget = models.IntegerField(default=0)
+    is_enabled = models.BooleanField(default=True)
 
 
 class Category(models.Model):
     code = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='subcategories',
+                               on_delete=models.CASCADE)
+
+    def get_subcategory_codes(self):
+        # Return a list of all subcategory codes for this category.
+        subcategory_codes = [subcat.code for subcat in self.subcategories.all()]
+        for subcat in self.subcategories.all():
+            subcategory_codes.extend(subcat.get_subcategory_codes())
+        return subcategory_codes
 
 
 class Creative(models.Model):
@@ -55,6 +65,7 @@ class Configuration(models.Model):
     click_revenue = models.IntegerField(default=0)
     conversion_revenue = models.IntegerField(default=0)
     frequency_capping = models.IntegerField(default=0)
+    game_goal = models.BooleanField(default=False)  # False if "revenue"
 
 
 class CampaignFrequency(models.Model):

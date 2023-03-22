@@ -19,12 +19,13 @@ class NotifyAdmin(admin.ModelAdmin):
 
 @admin.register(Campaign)
 class CampaignAdmin(admin.ModelAdmin):
-    list_display = ('name', 'budget')
+    list_display = ('name', 'budget', 'is_enabled')
+    list_editable = ('is_enabled',)
 
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('code', 'name')
+    list_display = ('code', 'name', 'parent')
 
 
 class CategoryInline(admin.TabularInline):
