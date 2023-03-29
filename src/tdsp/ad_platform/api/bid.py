@@ -9,6 +9,7 @@ from django.http import JsonResponse, HttpResponse
 
 #
 from ..models import BidRequest, Creative, BidResponse, Configuration, Campaign, CampaignFrequency, Category
+from ..tools.admin_authorized import admin_authorized
 
 
 class BidView(View):
@@ -43,14 +44,19 @@ class BidView(View):
 
         if not config.game_goal:  # If game_goal is "revenue"
             price = (expected_click_revenue + expected_conv_revenue) / 2
-        else:  # If game_goal is spent budget / number of clicks
+        else:  # If game_goal is (spent budget) / (number of clicks)
             if click_prob > 0.5:
                 price = expected_click_revenue + (expected_conv_revenue / 2)
             else:
                 price = (expected_click_revenue + expected_conv_revenue) / 3
 
+        price = max(campaign.min_bid, price)
+
         if campaign.budget - price < 0:
             price = campaign.budget
+
+        if price < 0:
+            price = 0
 
         price = round(price, 2)
 
@@ -68,14 +74,27 @@ class BidView(View):
         if campaign_frequency.frequency >= Configuration.objects.first().frequency_capping:
             return False
 
-        # increment the campaign frequency and save
-        campaign_frequency.frequency += 1
-        campaign_frequency.save()
-
         return True
 
     @staticmethod
-    def return_creatives(bcat):
+    def return_creatives(bcat, user_id):
+
+        # get all enabled campaigns
+        enabled_campaigns = Campaign.objects.filter(is_enabled=True)
+
+        # get all valid campaigns (i.e., enabled campaigns with frequency cap not exceeded)
+        valid_campaigns = []
+        for campaign in enabled_campaigns:
+            if BidView.check_frequency_capping(user_id, campaign):
+                valid_campaigns.append(campaign)
+
+        # get all creatives belonging to valid campaigns
+        query = Q()
+        for campaign in valid_campaigns:
+            query |= Q(campaign=campaign)
+
+        valid_creatives = Creative.objects.filter(query)
+
         forbidden_categories = []
         forbidden_subcategories = []
 
@@ -97,7 +116,8 @@ class BidView(View):
             forbidden_subcategories += category.get_subcategory_codes()
 
         # Exclude the forbidden creatives
-        creatives = Creative.objects.exclude(query).exclude(categories__code__in=forbidden_subcategories)
+        creatives = valid_creatives.exclude(query).exclude(categories__code__in=forbidden_subcategories)
+
         return creatives
 
     @staticmethod
@@ -159,32 +179,19 @@ class BidView(View):
         blocked_categories = request_data.get('bcat', [])
 
         # Get all creatives that don't belong to blocked categories
-        available_creatives = BidView.return_creatives(blocked_categories)
+        available_creatives = BidView.return_creatives(blocked_categories, user_id)
 
         # Select a creative at random from the available list
-        creatives = available_creatives.order_by('?')
-
-        if creatives:
-            creative = creatives.first()
-            campaign = creative.campaign
-            for c in creatives:
-                if c.campaign.is_enabled:
-                    creative = c
-                    campaign = c.campaign
-                    break
-        else:
-            response_data = HttpResponse(content_type='text/plain;charset=UTF8', status=204)
-            response_data.content = "No Bid"
-            return response_data
+        creative = available_creatives.order_by('?').first()
 
         # Check frequency capping
-        frequency_capping = BidView.check_frequency_capping(user_id, campaign)
+        # frequency_capping = BidView.check_frequency_capping(user_id, creative.campaign)
 
-        if creative and frequency_capping:
+        if creative:  # and frequency_capping:
             url = f"http://{request.get_host()}/api/creatives/{creative.id}?width={banner_width}&height={banner_height}"
 
             # calculate price
-            price = BidView.calculate_price(float(click_prob), float(conv_prob), campaign)
+            price = BidView.calculate_price(float(click_prob), float(conv_prob), creative.campaign)
 
             # create bid response object
             bid_response = BidResponse.objects.create(
@@ -267,32 +274,19 @@ class BidView(View):
         blocked_categories = request_data.get('bcat', [])
 
         # Get all creatives that don't belong to blocked categories
-        available_creatives = BidView.return_creatives(blocked_categories)
+        available_creatives = BidView.return_creatives(blocked_categories, user_id)
 
         # Select a creative at random from the available list
-        creatives = available_creatives.order_by('?')
-
-        if creatives:
-            creative = creatives.first()
-            campaign = creative.campaign
-            for c in creatives:
-                if c.campaign.is_enabled:
-                    creative = c
-                    campaign = c.campaign
-                    break
-        else:
-            response_data = HttpResponse(content_type='text/plain;charset=UTF8', status=204)
-            response_data.content = "No Bid"
-            return response_data
+        creative = available_creatives.order_by('?').first()
 
         # Check frequency capping
         # frequency_capping = BidView.check_frequency_capping(user_id, campaign)
 
         if creative:  # and frequency_capping:
-            url = creative.url
+            url = f"http://{request.get_host()}/api/creatives/{creative.id}?width={banner_width}&height={banner_height}"
 
             # calculate price
-            price = BidView.calculate_price(float(click_prob), float(conv_prob), campaign)
+            price = BidView.calculate_price(float(click_prob), float(conv_prob), creative.campaign)
 
             # create bid response object
             bid_response = BidResponse.objects.create(
@@ -317,9 +311,16 @@ class BidView(View):
         return response_data
 
     @staticmethod
+    @admin_authorized
     def post(request):
         config = Configuration.objects.first()
-        mode = config.mode
+
+        if config:
+            mode = config.mode
+        else:
+            response_data = HttpResponse(content_type='text/plain;charset=UTF8', status=204)
+            response_data.content = "No Bid"
+            return response_data
 
         if mode:
             return BidView.script_mode(request)

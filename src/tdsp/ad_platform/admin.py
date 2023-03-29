@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import BidRequest, BidResponse, Notify, Campaign, Category, Creative, Configuration, CampaignFrequency
+from .models import BidRequest, BidResponse, Notify, Campaign, Category, Creative, Configuration, CampaignFrequency, \
+    GenericUser
 
 
 @admin.register(BidRequest)
@@ -19,8 +20,8 @@ class NotifyAdmin(admin.ModelAdmin):
 
 @admin.register(Campaign)
 class CampaignAdmin(admin.ModelAdmin):
-    list_display = ('name', 'budget', 'is_enabled')
-    list_editable = ('is_enabled',)
+    list_display = ('name', 'budget', 'is_enabled', 'min_bid')
+    list_editable = ('is_enabled', 'min_bid')
 
 
 @admin.register(Category)
@@ -58,3 +59,17 @@ class CampaignFrequencyAdmin(admin.ModelAdmin):
         'user_id',
         'campaign_id',
         'frequency')
+
+
+@admin.register(GenericUser)
+class GenericUserAdmin(admin.ModelAdmin):
+    list_display = ('user_id', 'user_username', 'superuser')
+
+    def user_id(self, obj):
+        return obj.user.id
+
+    def user_username(self, obj):
+        return obj.user.username
+
+    def superuser(self, obj):
+        return obj.user.is_superuser
