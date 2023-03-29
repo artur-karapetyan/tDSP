@@ -26,4 +26,4 @@ jobs:
         pip install -r requirements.txt
     - name: Run Tests
       run: |
-        python src/tdsp/manage.py test
+        bash -c 'python3 src/tdsp/manage.py test'
