@@ -1,11 +1,11 @@
 #
 import json
 import base64
-from urllib.parse import quote
 from io import BytesIO
 
 #
 from PIL import Image
+from django.core.paginator import Paginator
 
 #
 from django.views import View
@@ -14,19 +14,21 @@ from django.http import JsonResponse, HttpResponse
 
 #
 from ..models import Creative, Category, Campaign
+from ..tools.admin_authorized import admin_authorized
+from ..tools.data_status import data_status
 
 
 class CreativeView(View):
 
     @staticmethod
-    def get(request, name):
+    def get_image(request, creative_id):
         width = int(request.GET.get('width', 0))
         height = int(request.GET.get('height', 0))
         if width > 2000 or height > 2000:
             width = 500
             height = 500
         try:
-            creative = Creative.objects.get(id=name)
+            creative = Creative.objects.get(id=creative_id)
         except Creative.DoesNotExist:
             return HttpResponse(status=404)
 
@@ -49,6 +51,7 @@ class CreativeView(View):
         return HttpResponse(buffer, content_type='image/png')
 
     @staticmethod
+    @admin_authorized
     def post(request):
         data = json.loads(request.body)
 
@@ -64,13 +67,6 @@ class CreativeView(View):
 
         # Decode the file data and create a ContentFile object
         file_data = base64.b64decode(file_data)
-        # new_name = quote(name)
-        # new_name = new_name.replace("%", "")
-        # file = ContentFile(file_data, name=f'{new_name}.png')
-        #
-        # img = Image.open(file)
-
-        # url = f"http://{request.get_host()}/api/creatives/{new_name}?width={img.width}&height={img.height}"
 
         # Create or retrieve the campaign object
         try:
@@ -104,3 +100,43 @@ class CreativeView(View):
         }
 
         return JsonResponse(response_data, status=201)
+
+    @staticmethod
+    @admin_authorized
+    def get(request, page):
+        creatives = Creative.objects.order_by('-id').all()
+
+        # Set the number of items per page
+        items_per_page = 3
+
+        # Create a Paginator object
+        paginator = Paginator(creatives, items_per_page)
+
+        # Get the current page number from the request query parameters
+        page_number = page
+
+        # Get the Page object for the current page
+        page_obj = paginator.get_page(page_number)
+
+        data = []
+        for creative in page_obj:
+            url = f"http://{request.get_host()}/api/creatives/{creative.id}?width=280&height=280"
+            creative_data = {
+                'url': url,
+                'id': creative.id,
+                'name': creative.name,
+                'external_id': creative.external_id,
+                'campaign_id': creative.campaign.id,
+                'campaign_name': creative.campaign.name,
+                'categories': list(creative.categories.values_list('code', flat=True)),
+            }
+            data.append(creative_data)
+
+        # Create a dictionary containing the pagination information and the data for the current page
+        response_data = {
+            'page': page_number,
+            'total_pages': paginator.num_pages,
+            'total_items': paginator.count,
+            'data': data,
+        }
+        return data_status(response_data)

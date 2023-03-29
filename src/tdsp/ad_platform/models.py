@@ -1,3 +1,5 @@
+from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator
 from django.db import models
 
 
@@ -30,6 +32,7 @@ class Notify(models.Model):
 class Campaign(models.Model):
     name = models.CharField(max_length=100)
     budget = models.IntegerField(default=0)
+    min_bid = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     is_enabled = models.BooleanField(default=True)
 
 
@@ -72,3 +75,7 @@ class CampaignFrequency(models.Model):
     user_id = models.CharField(max_length=100)
     campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE)
     frequency = models.IntegerField(default=0)
+
+
+class GenericUser(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)

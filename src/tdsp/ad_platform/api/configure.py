@@ -1,19 +1,22 @@
 #
 import json
 
+from django.core.paginator import Paginator
 #
 from django.views import View
 from django.http import JsonResponse
 
 #
 from ..models import Configuration, Campaign, Creative, BidRequest, BidResponse, CampaignFrequency, Notify
+from ..tools.admin_authorized import admin_authorized
+from ..tools.data_status import data_status
 
 
 class ConfigurationView(View):
 
     @staticmethod
+    @admin_authorized
     def post(request):
-        # print(request.user)
         Configuration.objects.all().delete()
         BidRequest.objects.all().delete()
         BidResponse.objects.all().delete()
@@ -32,7 +35,7 @@ class ConfigurationView(View):
             freq_capping = data.get('frequency_capping')
             game_goal = data.get('game_goal')
         except:
-            return JsonResponse({'error': 'Missing fields'})
+            return JsonResponse({'error': 'Missing fields'}, status=400)
 
         config = Configuration.objects.create(
             impressions_total=impressions_total,
@@ -49,9 +52,30 @@ class ConfigurationView(View):
         if mode == 'free':
             campaign = Campaign.objects.first()
             campaign.budget = budget
+            campaign.min_bid = impression_revenue
             campaign.save()
         else:
             Campaign.objects.all().delete()
             Creative.objects.all().delete()
 
         return JsonResponse({}, status=200)
+
+    @staticmethod
+    @admin_authorized
+    def get(request):
+        config = Configuration.objects.first()
+
+        data = {
+            'id': config.id,
+            'impressions_total': config.impressions_total,
+            'auction_type': "1st Auction" if not config.auction_type else "2nd Auction",
+            'mode': "Free" if not config.mode else "Script",
+            'game_goal': "Revenue" if not config.game_goal else "CPC",
+            'budget': config.budget,
+            'impression_revenue': config.impression_revenue,
+            'click_revenue': config.click_revenue,
+            'conversion_revenue': config.conversion_revenue,
+            'frequency_capping': config.frequency_capping,
+        }
+
+        return data_status(data)
