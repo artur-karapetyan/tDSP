@@ -10,6 +10,7 @@ from django.views import View
 from ..models import Notify, BidResponse, Creative, BidRequest, CampaignFrequency
 from ..tools.data_status import data_status
 from ..tools.admin_authorized import admin_authorized
+from ..tools.is_authorized import is_authorized
 
 
 class NotifyView(View):
@@ -61,7 +62,7 @@ class NotifyView(View):
         return JsonResponse({}, status=200)
 
     @staticmethod
-    @admin_authorized
+    @is_authorized
     def get(request, page):
         notifies = Notify.objects.order_by("-id").all()
 

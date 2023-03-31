@@ -11,7 +11,13 @@ class CategoryView(View):
 
     @staticmethod
     @admin_authorized
-    def get(request, page):
+    def get(request):
+        category_codes = list(Category.objects.order_by('-id').values_list('code', flat=True))
+        return data_status(category_codes)
+
+    @staticmethod
+    @admin_authorized
+    def get_page(request, page):
         categories = Category.objects.order_by('-id').all()
 
         # Set the number of items per page

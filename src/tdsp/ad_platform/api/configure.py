@@ -10,6 +10,7 @@ from django.http import JsonResponse
 from ..models import Configuration, Campaign, Creative, BidRequest, BidResponse, CampaignFrequency, Notify
 from ..tools.admin_authorized import admin_authorized
 from ..tools.data_status import data_status
+from ..tools.is_authorized import is_authorized
 
 
 class ConfigurationView(View):
@@ -61,7 +62,7 @@ class ConfigurationView(View):
         return JsonResponse({}, status=200)
 
     @staticmethod
-    @admin_authorized
+    @is_authorized
     def get(request):
         config = Configuration.objects.first()
 
