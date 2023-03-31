@@ -1,14 +1,16 @@
 #
 import json
 import requests
-from django.db.models import Q
 
 #
 from django.views import View
+from django.db.models import Q
 from django.http import JsonResponse, HttpResponse
 
 #
 from ..models import BidRequest, Creative, BidResponse, Configuration, Campaign, CampaignFrequency, Category
+
+#
 from ..tools.admin_authorized import admin_authorized
 
 
@@ -164,7 +166,7 @@ class BidView(View):
             banner_height = 500
 
         # create bid request object
-        bid_request = BidRequest.objects.create(
+        BidRequest.objects.create(
             bid_id=bid_id,
             banner_width=banner_width,
             banner_height=banner_height,
@@ -194,7 +196,7 @@ class BidView(View):
             price = BidView.calculate_price(float(click_prob), float(conv_prob), creative.campaign)
 
             # create bid response object
-            bid_response = BidResponse.objects.create(
+            BidResponse.objects.create(
                 bid_id=bid_id,
                 external_id=creative.external_id,
                 price=price,
@@ -260,7 +262,7 @@ class BidView(View):
             return response_data
 
         # create bid request object
-        bid_request = BidRequest.objects.create(
+        BidRequest.objects.create(
             bid_id=bid_id,
             banner_width=banner_width,
             banner_height=banner_height,
@@ -279,9 +281,6 @@ class BidView(View):
         # Select a creative at random from the available list
         creative = available_creatives.order_by('?').first()
 
-        # Check frequency capping
-        # frequency_capping = BidView.check_frequency_capping(user_id, campaign)
-
         if creative:  # and frequency_capping:
             url = f"http://{request.get_host()}/api/creatives/{creative.id}?width={banner_width}&height={banner_height}"
 
@@ -289,7 +288,7 @@ class BidView(View):
             price = BidView.calculate_price(float(click_prob), float(conv_prob), creative.campaign)
 
             # create bid response object
-            bid_response = BidResponse.objects.create(
+            BidResponse.objects.create(
                 bid_id=bid_id,
                 external_id=creative.external_id,
                 price=price,

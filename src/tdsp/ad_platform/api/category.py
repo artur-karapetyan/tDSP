@@ -1,10 +1,13 @@
-from django.core.paginator import Paginator
+#
 from django.views import View
+from django.core.paginator import Paginator
 
+#
 from ..models import Category
-from ..tools.admin_authorized import admin_authorized
 
+#
 from ..tools.data_status import data_status
+from ..tools.admin_authorized import admin_authorized
 
 
 class CategoryView(View):
@@ -44,9 +47,9 @@ class CategoryView(View):
 
         # Create a dictionary containing the pagination information and the data for the current page
         response_data = {
-                'page': page_number,
-                'total_pages': paginator.num_pages,
-                'total_items': paginator.count,
-                'data': data,
-            }
+            'page': page_number,
+            'total_pages': paginator.num_pages,
+            'total_items': paginator.count,
+            'data': data,
+        }
         return data_status(response_data)

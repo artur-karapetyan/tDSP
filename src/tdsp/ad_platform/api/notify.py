@@ -1,13 +1,15 @@
 #
 import json
 
-from django.core.paginator import Paginator
 #
-from django.http import JsonResponse
 from django.views import View
+from django.http import JsonResponse
+from django.core.paginator import Paginator
 
 #
 from ..models import Notify, BidResponse, Creative, BidRequest, CampaignFrequency
+
+#
 from ..tools.data_status import data_status
 from ..tools.admin_authorized import admin_authorized
 from ..tools.is_authorized import is_authorized
@@ -22,7 +24,6 @@ class NotifyView(View):
         if data.get('win'):
             notifications = Notify.objects.filter(notify_id=data.get('id'))
             if notifications.exists():
-                print("aaa")
                 return JsonResponse({'error': 'Wrong id'}, status=400)
             notify = Notify.objects.create(
                 notify_id=data.get('id'),
@@ -52,7 +53,7 @@ class NotifyView(View):
             campaign.save()
         else:
             try:
-                notify = Notify.objects.create(
+                Notify.objects.create(
                     notify_id=data.get('id'),
                     win=data.get('win'),
                 )

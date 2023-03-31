@@ -5,17 +5,19 @@ from io import BytesIO
 
 #
 from PIL import Image
-from django.core.paginator import Paginator
 
 #
 from django.views import View
+from django.core.paginator import Paginator
 from django.core.files.base import ContentFile
 from django.http import JsonResponse, HttpResponse
 
 #
 from ..models import Creative, Category, Campaign
-from ..tools.admin_authorized import admin_authorized
+
+#
 from ..tools.data_status import data_status
+from ..tools.admin_authorized import admin_authorized
 
 
 class CreativeView(View):
@@ -55,11 +57,14 @@ class CreativeView(View):
     def post(request):
         data = json.loads(request.body)
 
-        external_id = data['external_id']
-        name = data['name']
-        categories = data.get('categories', [])
-        campaign_id = data.get('campaign', {}).get('id')
-        file_data = data['file']
+        try:
+            external_id = data['external_id']
+            name = data['name']
+            categories = data.get('categories', [])
+            campaign_id = data.get('campaign', {}).get('id')
+            file_data = data['file']
+        except:
+            return JsonResponse({'error': 'Missing mandatory fields'}, status=400)
 
         # Check if external ID is unique
         if Creative.objects.filter(external_id=external_id).exists():

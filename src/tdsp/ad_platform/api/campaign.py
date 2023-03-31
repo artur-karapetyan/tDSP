@@ -1,17 +1,19 @@
 #
 import json
 
-from django.core.paginator import Paginator
 #
-from django.http import JsonResponse, HttpResponse
 from django.views import View
+from django.core.paginator import Paginator
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_GET
 
 #
 from ..models import Campaign, Configuration
-from ..tools.admin_authorized import admin_authorized
+
+#
 from ..tools.data_status import data_status
 from ..tools.is_authorized import is_authorized
+from ..tools.admin_authorized import admin_authorized
 
 
 class CampaignView(View):
@@ -21,11 +23,17 @@ class CampaignView(View):
     def post(request):
         data = json.loads(request.body)
 
-        name = data['name']
-        budget = data['budget']
+        try:
+            name = data['name']
+            budget = data['budget']
+        except:
+            return JsonResponse({"error": "Missing mandatory fields"}, status=400)
 
-        config = Configuration.objects.first()
-        min_bid = config.impression_revenue
+        try:
+            config = Configuration.objects.first()
+            min_bid = config.impression_revenue
+        except:
+            return JsonResponse({"error": "No configuration found"}, status=400)
 
         campaign = Campaign.objects.create(name=name, budget=budget, min_bid=min_bid)
         campaign.save()

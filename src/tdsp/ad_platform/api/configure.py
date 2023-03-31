@@ -1,13 +1,14 @@
 #
 import json
 
-from django.core.paginator import Paginator
 #
 from django.views import View
 from django.http import JsonResponse
 
 #
 from ..models import Configuration, Campaign, Creative, BidRequest, BidResponse, CampaignFrequency, Notify
+
+#
 from ..tools.admin_authorized import admin_authorized
 from ..tools.data_status import data_status
 from ..tools.is_authorized import is_authorized
@@ -38,7 +39,7 @@ class ConfigurationView(View):
         except:
             return JsonResponse({'error': 'Missing fields'}, status=400)
 
-        config = Configuration.objects.create(
+        Configuration.objects.create(
             impressions_total=impressions_total,
             auction_type=False if auction_type == 1 else True,
             mode=False if mode == 'free' else True,
@@ -51,10 +52,13 @@ class ConfigurationView(View):
         )
 
         if mode == 'free':
-            campaign = Campaign.objects.first()
-            campaign.budget = budget
-            campaign.min_bid = impression_revenue
-            campaign.save()
+            try:
+                campaign = Campaign.objects.first()
+                campaign.budget = budget
+                campaign.min_bid = impression_revenue
+                campaign.save()
+            except:
+                pass
         else:
             Campaign.objects.all().delete()
             Creative.objects.all().delete()
