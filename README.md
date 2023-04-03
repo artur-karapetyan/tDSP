@@ -10,6 +10,8 @@ the process of bidding on ad inventory in real-time, using data and algorithms t
 
 ## API Endpoints
 
+> _Note that all endpoints are protected with JWT authentication. To send requests to endpoints You need to be logged in to User account and use the given token in Authorization Header._
+
 | API URL                            | Request Method    | Description                                                                                              |
 |------------------------------------|-------------------|----------------------------------------------------------------------------------------------------------|
 | `/rtb/bid/`                        | `POST`            | To send bid request and get response with bid price and creative image url                               |
