@@ -1,15 +1,18 @@
 #
 import json
+import logging
 
-from django.core.paginator import Paginator
 #
 from django.views import View
 from django.http import JsonResponse
 
 #
 from ..models import Configuration, Campaign, Creative, BidRequest, BidResponse, CampaignFrequency, Notify
+
+#
 from ..tools.admin_authorized import admin_authorized
 from ..tools.data_status import data_status
+from ..tools.is_authorized import is_authorized
 
 
 class ConfigurationView(View):
@@ -49,11 +52,19 @@ class ConfigurationView(View):
             game_goal=False if game_goal == 'revenue' else True
         )
 
-        if mode == 'free':
-            campaign = Campaign.objects.first()
-            campaign.budget = budget
-            campaign.min_bid = impression_revenue
-            campaign.save()
+        if not config.mode:
+            try:
+                campaign = Campaign.objects.first()
+                campaign.budget = budget
+                campaign.min_bid = impression_revenue
+                campaign.save()
+                Campaign.objects.exclude(id=campaign.id).delete()
+                if not campaign.is_enabled:
+                    campaign.is_enabled = True
+                    campaign.save()
+            except Exception as ex:
+                logging.exception(ex)
+
         else:
             Campaign.objects.all().delete()
             Creative.objects.all().delete()
@@ -61,7 +72,7 @@ class ConfigurationView(View):
         return JsonResponse({}, status=200)
 
     @staticmethod
-    @admin_authorized
+    @is_authorized
     def get(request):
         config = Configuration.objects.first()
 

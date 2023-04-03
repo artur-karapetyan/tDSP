@@ -1,15 +1,18 @@
 #
 import json
 
-from django.core.paginator import Paginator
 #
-from django.http import JsonResponse
 from django.views import View
+from django.http import JsonResponse
+from django.core.paginator import Paginator
 
 #
 from ..models import Notify, BidResponse, Creative, BidRequest, CampaignFrequency
+
+#
 from ..tools.data_status import data_status
 from ..tools.admin_authorized import admin_authorized
+from ..tools.is_authorized import is_authorized
 
 
 class NotifyView(View):
@@ -21,8 +24,7 @@ class NotifyView(View):
         if data.get('win'):
             notifications = Notify.objects.filter(notify_id=data.get('id'))
             if notifications.exists():
-                print("aaa")
-                return JsonResponse({'error': 'Wrong id'}, status=400)
+                return JsonResponse({'error': 'ID already Exists'}, status=400)
             notify = Notify.objects.create(
                 notify_id=data.get('id'),
                 win=data.get('win'),
@@ -47,11 +49,14 @@ class NotifyView(View):
             freq_cap.save()
 
             # Change budget
-            campaign.budget -= notify.price
+            campaign.budget = round(campaign.budget - notify.price, 2)
             campaign.save()
+            if campaign.budget < 1:
+                campaign.is_enabled = False
+                campaign.save()
         else:
             try:
-                notify = Notify.objects.create(
+                Notify.objects.create(
                     notify_id=data.get('id'),
                     win=data.get('win'),
                 )
@@ -61,7 +66,7 @@ class NotifyView(View):
         return JsonResponse({}, status=200)
 
     @staticmethod
-    @admin_authorized
+    @is_authorized
     def get(request, page):
         notifies = Notify.objects.order_by("-id").all()
 

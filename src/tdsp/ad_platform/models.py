@@ -31,7 +31,7 @@ class Notify(models.Model):
 
 class Campaign(models.Model):
     name = models.CharField(max_length=100)
-    budget = models.IntegerField(default=0)
+    budget = models.FloatField(default=0)
     min_bid = models.IntegerField(default=0, validators=[MinValueValidator(0)])
     is_enabled = models.BooleanField(default=True)
 
