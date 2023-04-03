@@ -1,5 +1,6 @@
 #
 import json
+import logging
 
 #
 from django.views import View
@@ -39,7 +40,7 @@ class ConfigurationView(View):
         except:
             return JsonResponse({'error': 'Missing fields'}, status=400)
 
-        Configuration.objects.create(
+        config = Configuration.objects.create(
             impressions_total=impressions_total,
             auction_type=False if auction_type == 1 else True,
             mode=False if mode == 'free' else True,
@@ -51,14 +52,19 @@ class ConfigurationView(View):
             game_goal=False if game_goal == 'revenue' else True
         )
 
-        if mode == 'free':
+        if not config.mode:
             try:
                 campaign = Campaign.objects.first()
                 campaign.budget = budget
                 campaign.min_bid = impression_revenue
                 campaign.save()
-            except:
-                pass
+                Campaign.objects.exclude(id=campaign.id).delete()
+                if not campaign.is_enabled:
+                    campaign.is_enabled = True
+                    campaign.save()
+            except Exception as ex:
+                logging.exception(ex)
+
         else:
             Campaign.objects.all().delete()
             Creative.objects.all().delete()
