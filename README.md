@@ -47,17 +47,26 @@ To use the project with PostgreSQL as the database create `.env` file in `tdsp` 
 DATABASE_NAME=YOUR_DATABASE_NAME
 USER_NAME=YOUR_USER_NAME
 PASSWORD=YOUR_PASSWORD
-HOST=localhost
+HOST=postgres
 PORT=5432
 ```
-
 After configuring database run these commands:
+
+### Pip
 
 ```
 $ python manage.py makemigrations
 $ python manage.py migrate
 $ python manage.py runserver
 # Load the site at http://127.0.0.1:8000
+```
+### Docker
+
+```
+$ docker-compose up -d --build
+$ docker-compose exec web python manage.py migrate
+$ docker-compose exec web python manage.py createsuperuser
+# Load the site at http://0.0.0.0:9090
 ```
 
 ## Contributing
