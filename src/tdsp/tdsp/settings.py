@@ -9,8 +9,10 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
+import os
 from pathlib import Path
 import environ
+from django.db.utils import OperationalError
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -89,16 +91,31 @@ WSGI_APPLICATION = 'tdsp.wsgi.application'
 env = environ.Env()
 # reading .env file
 environ.Env.read_env()
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.postgresql_psycopg2",
+#         "NAME": env("DATABASE_NAME"),
+#         "USER": env("USER_NAME"),
+#         "PASSWORD": env("PASSWORD"),
+#         "HOST": env("HOST"),
+#         "PORT": env("PORT"),
+#     }
+# }
+
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": env("DATABASE_NAME"),
-        "USER": env("USER_NAME"),
-        "PASSWORD": env("PASSWORD"),
-        "HOST": env("HOST"),
-        "PORT": env("PORT"),
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': env('DATABASE_NAME'),
+        'USER': env('USER_NAME'),
+        'PASSWORD': env('PASSWORD'),
+        'PORT': '5432',
     }
 }
+
+if 'POSTGRES_HOST' in os.environ:
+    DATABASES['default']['HOST'] = os.environ['POSTGRES_HOST']
+else:
+    DATABASES['default']['HOST'] = 'localhost'
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators

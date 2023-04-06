@@ -55,10 +55,16 @@ class ConfigurationView(View):
         if not config.mode:
             try:
                 campaign = Campaign.objects.first()
+                if campaign:
+                    Campaign.objects.exclude(id=campaign.id).delete()
                 campaign.budget = budget
-                campaign.min_bid = impression_revenue
                 campaign.save()
-                Campaign.objects.exclude(id=campaign.id).delete()
+                if impression_revenue < budget / impressions_total:
+                    campaign.min_bid = impression_revenue
+                    campaign.save()
+                else:
+                    campaign.min_bid = budget / impressions_total
+                    campaign.save()
                 if not campaign.is_enabled:
                     campaign.is_enabled = True
                     campaign.save()

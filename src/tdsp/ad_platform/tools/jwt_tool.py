@@ -11,4 +11,4 @@ def generate_jwt(user):
         "issued_at_time": str(datetime.utcnow()),
     }
     jwt_token = jwt.encode(jwt_payload, "SECRET_KEY", algorithm="HS256")
-    return jwt_token
+    return jwt_token.encode('utf-8')

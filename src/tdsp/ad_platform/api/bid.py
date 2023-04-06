@@ -41,7 +41,6 @@ class BidView(View):
     @staticmethod
     def calculate_price(click_prob, conv_prob, campaign, domain, ssp_id, user_id):
         config = Configuration.objects.first()
-        # impression_rev = config.impression_revenue
         click_rev = config.click_revenue
         conversion_rev = config.conversion_revenue
 
@@ -70,6 +69,9 @@ class BidView(View):
                     price = (expected_click_revenue + expected_conv_revenue) / 3
 
         price = max(campaign.min_bid, price)
+
+        if price > campaign.budget > campaign.min_bid:
+            price = campaign.min_bid
 
         if campaign.budget - price < 0:
             price = campaign.budget

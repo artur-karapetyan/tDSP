@@ -129,6 +129,7 @@ dmypy.json
 .pyre/
 migrations
 media
+static
 .idea
 
 #Ignore all xlsx files
