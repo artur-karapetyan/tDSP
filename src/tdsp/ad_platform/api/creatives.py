@@ -26,9 +26,11 @@ class CreativeView(View):
     def get_image(request, creative_id):
         width = int(request.GET.get('width', 0))
         height = int(request.GET.get('height', 0))
+
         if width > 2000 or height > 2000:
             width = 500
             height = 500
+
         try:
             creative = Creative.objects.get(id=creative_id)
         except Creative.DoesNotExist:
