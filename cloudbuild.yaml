@@ -1,4 +1,12 @@
 steps:
+  - name: bash
+    secretEnv:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+    script: |
+      #!/usr/bin/env bash
+      printenv > .env
   # running docker-compose
   - name: 'docker/compose:1.29.2'
     args: ['up', '-d']
