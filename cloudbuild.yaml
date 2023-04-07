@@ -16,8 +16,8 @@ availableSecrets:
         projects/$PROJECT_NUMBER/secrets/POSTGRES_USER/versions/latest
       env: POSTGRES_USER
     - versionName: >-
-        projects/$PROJECT_NUMBER/secrets/POSTGRES_USER/versions/latest
-      env: POSTGRES_USER
+        projects/$PROJECT_NUMBER/secrets/POSTGRES_PASSWORD/versions/latest
+      env: POSTGRES_PASSWORD
     - versionName: >-
-        projects/$PROJECT_NUMBER/secrets/POSTGRES_USER/versions/latest
-      env: POSTGRES_USER
+        projects/$PROJECT_NUMBER/secrets/POSTGRES_DB/versions/latest
+      env: POSTGRES_DB
