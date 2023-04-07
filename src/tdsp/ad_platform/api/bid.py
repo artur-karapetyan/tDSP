@@ -17,7 +17,7 @@ from ..tools.admin_authorized import admin_authorized
 
 
 class BidView(View):
-    server = "192.168.0.23:8082"
+    server = "108.61.176.250:14592"
 
     @staticmethod
     def check_ads_txt(site_domain, ssp_id):
@@ -41,6 +41,8 @@ class BidView(View):
     @staticmethod
     def calculate_price(click_prob, conv_prob, campaign, domain, ssp_id, user_id):
         config = Configuration.objects.first()
+        config.remaining_rounds -= 1
+        config.save()
         click_rev = config.click_revenue
         conversion_rev = config.conversion_revenue
 
@@ -51,6 +53,7 @@ class BidView(View):
         expected_conv_revenue = click_prob * conversion_rev * conv_prob
 
         authorized = BidView.check_ads_txt(domain, ssp_id)
+        # authorized = True
         if authorized:
             if not config.game_goal:  # If game_goal is "revenue"
                 price = (expected_click_revenue + expected_conv_revenue) / 2
@@ -67,6 +70,13 @@ class BidView(View):
                     price = expected_click_revenue + (expected_conv_revenue / 2)
                 else:
                     price = (expected_click_revenue + expected_conv_revenue) / 3
+
+        if campaign.budget / config.remaining_rounds > 10:
+            if price > 5 * (campaign.budget / config.remaining_rounds):
+                price = 3 * (campaign.budget / config.remaining_rounds)
+        else:
+            if price > 7 * (campaign.budget / config.remaining_rounds):
+                price = 5 * (campaign.budget / config.remaining_rounds)
 
         price = max(campaign.min_bid, price)
 
