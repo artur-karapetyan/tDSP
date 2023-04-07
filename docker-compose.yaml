@@ -10,8 +10,8 @@ services:
     ports:
       - "9090:9090"
     volumes:
-    - .:/app
-    - /var/run/docker.sock:/var/run/docker.sock
+      - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       DEPLOYMENT: api
       COMPOSE_HTTP_TIMEOUT: 3600
@@ -21,8 +21,7 @@ services:
       DEBUG: "True"
       POSTGRES_HOST: postgres
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
     stdin_open: true
     tty: true
     env_file: .env
@@ -53,7 +52,7 @@ services:
     expose:
       - 5432
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      test: [ "CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}" ]
       interval: 5s
       timeout: 5s
       retries: 5
