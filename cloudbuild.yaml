@@ -9,4 +9,15 @@ steps:
       printenv > .env
   # running docker-compose
   - name: 'docker/compose:1.29.2'
-    args: ['up', '-d']
+    args: [ 'up', '-d' ]
+availableSecrets:
+  secretManager:
+    - versionName: >-
+        projects/$PROJECT_NUMBER/secrets/POSTGRES_USER/versions/latest
+      env: POSTGRES_USER
+    - versionName: >-
+        projects/$PROJECT_NUMBER/secrets/POSTGRES_USER/versions/latest
+      env: POSTGRES_USER
+    - versionName: >-
+        projects/$PROJECT_NUMBER/secrets/POSTGRES_USER/versions/latest
+      env: POSTGRES_USER
