@@ -69,6 +69,7 @@ class Configuration(models.Model):
     conversion_revenue = models.IntegerField(default=0)
     frequency_capping = models.IntegerField(default=0)
     game_goal = models.BooleanField(default=False)  # False if "revenue"
+    remaining_rounds = models.IntegerField(default=0)
 
 
 class CampaignFrequency(models.Model):

@@ -31,7 +31,10 @@ class CampaignView(View):
 
         try:
             config = Configuration.objects.first()
-            min_bid = config.impression_revenue
+            if config.impression_revenue < budget / config.impressions_total:
+                min_bid = config.impression_revenue
+            else:
+                min_bid = 5
         except:
             return JsonResponse({"error": "No configuration found"}, status=400)
 

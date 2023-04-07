@@ -50,7 +50,9 @@ class ConfigurationAdmin(admin.ModelAdmin):
         'impression_revenue',
         'click_revenue',
         'conversion_revenue',
-        'frequency_capping')
+        'frequency_capping',
+        'game_goal',
+        'remaining_rounds')
 
 
 @admin.register(CampaignFrequency)
