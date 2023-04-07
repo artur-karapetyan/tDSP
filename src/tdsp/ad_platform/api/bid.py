@@ -40,6 +40,17 @@ class BidView(View):
 
     @staticmethod
     def calculate_price(click_prob, conv_prob, campaign, domain, ssp_id, user_id):
+        AUTHORIZED_REVENUE_MULTIPLIER = 0.5
+        AUTHORIZED_CLICK_MULTIPLIER_HIGH = 0.5
+        AUTHORIZED_CLICK_MULTIPLIER_LOW = 0.3
+
+        UNAUTHORIZED_REVENUE_MULTIPLIER = 0.3
+        UNAUTHORIZED_CLICK_MULTIPLIER_HIGH = 0.5
+        UNAUTHORIZED_CLICK_MULTIPLIER_LOW = 0.3
+
+        CLICK_PROB_MEDIUM_TARGET = 0.5
+        MIN_BUDGET_PER_ROUND = 10
+
         config = Configuration.objects.first()
         config.remaining_rounds -= 1
         config.save()
@@ -52,26 +63,25 @@ class BidView(View):
         expected_click_revenue = click_rev * click_prob
         expected_conv_revenue = click_prob * conversion_rev * conv_prob
 
-        authorized = BidView.check_ads_txt(domain, ssp_id)
-        # authorized = True
-        if authorized:
-            if not config.game_goal:  # If game_goal is "revenue"
-                price = (expected_click_revenue + expected_conv_revenue) / 2
-            else:  # If game_goal is (spent budget) / (number of clicks)
-                if click_prob > 0.5:
-                    price = expected_click_revenue + (expected_conv_revenue / 2)
-                else:
-                    price = (expected_click_revenue + expected_conv_revenue) / 3
-        else:
-            if not config.game_goal:  # If game_goal is "revenue"
-                price = (expected_click_revenue + expected_conv_revenue) / 3
-            else:  # If game_goal is (spent budget) / (number of clicks)
-                if click_prob > 0.5:
-                    price = expected_click_revenue + (expected_conv_revenue / 2)
-                else:
-                    price = (expected_click_revenue + expected_conv_revenue) / 3
+        # authorized = BidView.check_ads_txt(domain, ssp_id)
+        authorized = True
 
-        if campaign.budget / config.remaining_rounds > 10:
+        revenue_multiplier = AUTHORIZED_REVENUE_MULTIPLIER if authorized else UNAUTHORIZED_REVENUE_MULTIPLIER
+        click_multiplier_high = AUTHORIZED_CLICK_MULTIPLIER_HIGH if authorized else UNAUTHORIZED_CLICK_MULTIPLIER_HIGH
+        click_multiplier_low = AUTHORIZED_CLICK_MULTIPLIER_LOW if authorized else UNAUTHORIZED_CLICK_MULTIPLIER_LOW
+
+        game_goal_revenue = config.game_goal is False
+
+        if game_goal_revenue:
+            price = (expected_click_revenue + expected_conv_revenue) * revenue_multiplier
+        else:
+            if click_prob > CLICK_PROB_MEDIUM_TARGET:
+                price = expected_click_revenue + (expected_conv_revenue * click_multiplier_high)
+            else:
+                price = (expected_click_revenue + expected_conv_revenue) * click_multiplier_low
+
+        remaining_budget_per_round = campaign.budget / config.remaining_rounds
+        if remaining_budget_per_round > MIN_BUDGET_PER_ROUND:
             if price > 5 * (campaign.budget / config.remaining_rounds):
                 price = 3 * (campaign.budget / config.remaining_rounds)
         else:
@@ -83,7 +93,7 @@ class BidView(View):
         if price > campaign.budget > campaign.min_bid:
             price = campaign.min_bid
 
-        if campaign.budget - price < 0:
+        if campaign.budget < price:
             price = campaign.budget
 
         if price < 0:
