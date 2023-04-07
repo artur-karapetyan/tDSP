@@ -63,8 +63,7 @@ class BidView(View):
         expected_click_revenue = click_rev * click_prob
         expected_conv_revenue = click_prob * conversion_rev * conv_prob
 
-        # authorized = BidView.check_ads_txt(domain, ssp_id)
-        authorized = True
+        authorized = BidView.check_ads_txt(domain, ssp_id)
 
         revenue_multiplier = AUTHORIZED_REVENUE_MULTIPLIER if authorized else UNAUTHORIZED_REVENUE_MULTIPLIER
         click_multiplier_high = AUTHORIZED_CLICK_MULTIPLIER_HIGH if authorized else UNAUTHORIZED_CLICK_MULTIPLIER_HIGH
