@@ -17,6 +17,7 @@ from ..tools.admin_authorized import admin_authorized
 
 
 class BidView(View):
+    # server = "192.168.0.23:8082"
     server = "108.61.176.250:14592"
 
     @staticmethod
@@ -40,13 +41,13 @@ class BidView(View):
 
     @staticmethod
     def calculate_price(click_prob, conv_prob, campaign, domain, ssp_id, user_id):
-        AUTHORIZED_REVENUE_MULTIPLIER = 0.5
-        AUTHORIZED_CLICK_MULTIPLIER_HIGH = 0.5
-        AUTHORIZED_CLICK_MULTIPLIER_LOW = 0.3
+        AUTHORIZED_REVENUE_MULTIPLIER = 0.8
+        AUTHORIZED_CLICK_MULTIPLIER_HIGH = 0.8
+        AUTHORIZED_CLICK_MULTIPLIER_LOW = 0.6
 
-        UNAUTHORIZED_REVENUE_MULTIPLIER = 0.3
-        UNAUTHORIZED_CLICK_MULTIPLIER_HIGH = 0.5
-        UNAUTHORIZED_CLICK_MULTIPLIER_LOW = 0.3
+        UNAUTHORIZED_REVENUE_MULTIPLIER = 0.6
+        UNAUTHORIZED_CLICK_MULTIPLIER_HIGH = 0.8
+        UNAUTHORIZED_CLICK_MULTIPLIER_LOW = 0.6
 
         CLICK_PROB_MEDIUM_TARGET = 0.5
         MIN_BUDGET_PER_ROUND = 10
