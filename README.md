@@ -3,11 +3,12 @@
 This project is made by the team The Interns as a final project of IPONWEB internship.
 
 ## Table of Contents
+
 * [Description](#description)
 * [API Endpoints](#api-endpoints)
 * **[Installation](#installation)**
-  * [Pip](#pip)
-  * [Docker](#docker)
+    * [Pip](#pip)
+    * [Docker](#docker)
 * [Contributing](#contributing)
 * [Support](#support)
 * [License](#license)
@@ -20,25 +21,35 @@ the process of bidding on ad inventory in real-time, using data and algorithms t
 
 ## API Endpoints
 
-> _Note that all endpoints are protected with JWT authentication. To send requests to endpoints You need to be logged in to User account and use the given token in Authorization Header._
+> _Note that all endpoints are protected with JWT authentication. To send requests to endpoints You need to be logged in
+to User account and use the given token in Authorization Header._
 
-| API URL                            | Request Method    | Description                                                                                              |
-|------------------------------------|-------------------|----------------------------------------------------------------------------------------------------------|
-| `/rtb/bid/`                        | `POST`            | To send bid request and get response with bid price and creative image url                               |
-| `/rtb/notify/`                     | `POST`            | To send `win` or `lose` notification. Response type is `text/plain;charset=UTF-8` with status code `200` |
-| `/game/configure/`                 | `POST`            | To send configuration of the game                                                                        |
-| `api/creatives/`                   | `POST`            | To create a new creative                                                                                 |
-| `api/creatives/<str:creative_id>`  | `GET`             | To get the image of the creative                                                                         |
-| `api/creatives/<int:page>/`        | `GET`             | To get creatives using paginator                                                                         |
-| `api/campaigns/`                   | `POST` or `PATCH` | To create a new campaign or edit `min_bid` of all campaigns                                              |
-| `api/campaigns/<int:campaign_id>/` | `PATCH`           | To edit `min_bid` or `is_enabled` fields of a specific campaign                                          |
-| `api/bid_request/<int:page>/`      | `GET`             | To get bid requests using paginator                                                                      |
-| `api/bid_response/<int:page>/`     | `GET`             | To get bid responses using paginator                                                                     |
-| `api/categories/`                  | `GET`             | To get all categories' id-s                                                                              |
-| `api/categories/<int:page>/`       | `GET`             | To get categories using paginator                                                                        |
-| `api/notify/<int:page>/`           | `GET`             | To get notifications using paginator                                                                     |
-| `login/`                           | `POST`            | To login into User account                                                                               |
-| `logout/`                          | `POST`            | To logout from logged in User account                                                                    |
+### Endpoints used by tSSP
+
+| API URL                           | Request Method | Description                                                                                              |
+|-----------------------------------|----------------|----------------------------------------------------------------------------------------------------------|
+| `/rtb/bid/`                       | `POST`         | To send bid request and get response with bid price and creative image url                               |
+| `/rtb/notify/`                    | `POST`         | To send `win` or `lose` notification. Response type is `text/plain;charset=UTF-8` with status code `200` |
+| `/game/configure/`                | `POST`         | To send configuration of the game                                                                        |
+| `api/creatives/`                  | `POST`         | To create a new creative                                                                                 |
+| `api/creatives/<str:creative_id>` | `GET`          | To get the image of the creative                                                                         |
+| `api/campaigns/`                  | `POST`         | To create a new campaign                                                                                 |
+
+### Endpoints used by Front-end
+
+| API URL                            | Request Method   | Description                                                     |
+|------------------------------------|------------------|-----------------------------------------------------------------|
+| `api/creatives/<int:page>/`        | `GET`            | To get creatives using paginator                                |
+| `api/campaigns/`                   | `PATCH` or `GET` | To edit `min_bid` of all campaigns or get all campaigns' ID-s   |
+| `api/campaigns/<int:campaign_id>/` | `PATCH`          | To edit `min_bid` or `is_enabled` fields of a specific campaign |
+| `api/bid_request/<int:page>/`      | `GET`            | To get bid requests using paginator                             |
+| `api/bid_response/<int:page>/`     | `GET`            | To get bid responses using paginator                            |
+| `api/categories/`                  | `GET`            | To get all categories' id-s                                     |
+| `api/categories/<int:page>/`       | `GET`            | To get categories using paginator                               |
+| `/game/configure/`                 | `GET`            | To get configuration of the game                                |
+| `api/notify/<int:page>/`           | `GET`            | To get notifications using paginator                            |
+| `login/`                           | `POST`           | To login into User account                                      |
+| `logout/`                          | `POST`           | To logout from logged in User account                           |
 
 ## Installation
 
@@ -60,6 +71,7 @@ PASSWORD=YOUR_PASSWORD
 HOST=postgres
 PORT=5432
 ```
+
 After configuring database run these commands:
 
 ### Pip
@@ -70,6 +82,7 @@ $ python manage.py migrate
 $ python manage.py runserver
 # Load the site at http://127.0.0.1:8000
 ```
+
 ### Docker
 
 ```
