@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 import os
 from pathlib import Path
 import environ
-from django.db.utils import OperationalError
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -48,8 +47,6 @@ INSTALLED_APPS = [
     'ad_platform',
     'django_extensions',
     'django_cleanup.apps.CleanupConfig',
-    # 'rest_framework',
-    # 'rest_framework_simplejwt',
 ]
 
 MIDDLEWARE = [
