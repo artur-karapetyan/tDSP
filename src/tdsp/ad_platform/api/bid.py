@@ -51,6 +51,7 @@ class BidView(View):
 
         CLICK_PROB_MEDIUM_TARGET = 0.5
         MIN_BUDGET_PER_ROUND = 10
+        DECREASED_CLICK_PROB = 0.05
 
         config = Configuration.objects.first()
         config.remaining_rounds -= 1
@@ -59,7 +60,7 @@ class BidView(View):
         conversion_rev = config.conversion_revenue
 
         if not BidView.check_frequency_capping(user_id, campaign):
-            click_prob -= 0.05
+            click_prob -= DECREASED_CLICK_PROB
 
         expected_click_revenue = click_rev * click_prob
         expected_conv_revenue = click_prob * conversion_rev * conv_prob
@@ -82,22 +83,18 @@ class BidView(View):
 
         remaining_budget_per_round = campaign.budget / config.remaining_rounds
         if remaining_budget_per_round > MIN_BUDGET_PER_ROUND:
-            if price > 5 * (campaign.budget / config.remaining_rounds):
-                price = 3 * (campaign.budget / config.remaining_rounds)
+            if price > 5 * remaining_budget_per_round:
+                price = 3 * remaining_budget_per_round
         else:
-            if price > 7 * (campaign.budget / config.remaining_rounds):
-                price = 5 * (campaign.budget / config.remaining_rounds)
+            if price > 7 * remaining_budget_per_round:
+                price = 5 * remaining_budget_per_round
 
         price = max(campaign.min_bid, price)
 
         if price > campaign.budget > campaign.min_bid:
             price = campaign.min_bid
-
-        if campaign.budget < price:
+        elif price > campaign.min_bid > campaign.budget:
             price = campaign.budget
-
-        if price < 0:
-            price = 0
 
         price = round(price, 2)
 
@@ -170,17 +167,16 @@ class BidView(View):
         request_data = json.loads(request.body)
 
         # extract the mandatory fields from the request data
-        bid_id = request_data['id']
-        banner_width = request_data['imp']['banner']['w']
-        banner_height = request_data['imp']['banner']['h']
-        click_prob = request_data['click']['prob']
-        conv_prob = request_data['conv']['prob']
-        domain = request_data['site']['domain']
-        ssp_id = request_data['ssp']['id']
-        user_id = request_data['user']['id']
-
-        # check if mandatory fields are present
-        if not all([bid_id, banner_width, banner_height, click_prob, conv_prob, domain, ssp_id, user_id]):
+        try:
+            bid_id = request_data['id']
+            banner_width = request_data['imp']['banner']['w']
+            banner_height = request_data['imp']['banner']['h']
+            click_prob = request_data['click']['prob']
+            conv_prob = request_data['conv']['prob']
+            domain = request_data['site']['domain']
+            ssp_id = request_data['ssp']['id']
+            user_id = request_data['user']['id']
+        except:
             response_data = HttpResponse(content_type='text/plain;charset=UTF8', status=204)
             response_data.content = "No Bid"
             return response_data
@@ -261,17 +257,16 @@ class BidView(View):
         request_data = json.loads(request.body)
 
         # extract the mandatory fields from the request data
-        bid_id = request_data['id']
-        banner_width = request_data['imp']['banner']['w']
-        banner_height = request_data['imp']['banner']['h']
-        click_prob = request_data['click']['prob']
-        conv_prob = request_data['conv']['prob']
-        domain = request_data['site']['domain']
-        ssp_id = request_data['ssp']['id']
-        user_id = request_data['user']['id']
-
-        # check if mandatory fields are present
-        if not all([bid_id, banner_width, banner_height, click_prob, conv_prob, domain, ssp_id, user_id]):
+        try:
+            bid_id = request_data['id']
+            banner_width = request_data['imp']['banner']['w']
+            banner_height = request_data['imp']['banner']['h']
+            click_prob = request_data['click']['prob']
+            conv_prob = request_data['conv']['prob']
+            domain = request_data['site']['domain']
+            ssp_id = request_data['ssp']['id']
+            user_id = request_data['user']['id']
+        except:
             response_data = HttpResponse(content_type='text/plain;charset=UTF8', status=204)
             response_data.content = "No Bid"
             return response_data
@@ -308,11 +303,6 @@ class BidView(View):
             ssp_id=ssp_id,
             user_id=user_id,
         )
-        # # Assume that blocked_categories is a list of blocked category codes
-        # blocked_categories = request_data.get('bcat', [])
-        #
-        # # Get all creatives that don't belong to blocked categories
-        # available_creatives = BidView.return_creatives(blocked_categories, user_id)
 
         # Select a creative at random from the available list
         creative = Creative.objects.order_by('?').first()
